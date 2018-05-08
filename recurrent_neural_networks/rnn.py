@@ -11,7 +11,7 @@ from keras.layers import Dense
 from keras.layers import LSTM
 from keras.layers import Dropout
 
-dataset_train = pd.read_csv('Google_Stock_Price_Train.csv')
+dataset_train = pd.read_csv('google_stock_price_train.csv')
 training_set = dataset_train.iloc[:, 1:2].values
 
 sc = MinMaxScaler(feature_range=(0, 1))
@@ -46,7 +46,7 @@ regressor.add(Dense(units=1))
 regressor.compile(optimizer='adam', loss='mean_squared_error')
 regressor.fit(X_train, y_train, epochs=100, batch_size=32)
 
-dataset_test = pd.read_csv('Google_Stock_Price_Test.csv')
+dataset_test = pd.read_csv('google_stock_price_test.csv')
 real_stock_price = dataset_test.iloc[:, 1:2].values
 
 dataset_total = pd.concat((dataset_train['Open'], dataset_test['Open']), axis=0)
