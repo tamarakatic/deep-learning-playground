@@ -7,3 +7,4 @@ nltk==3.2.5
 Theano==1.0.1
 tensorflow==1.7.0
 pillow==5.0.0
+minisom==1.1.1
