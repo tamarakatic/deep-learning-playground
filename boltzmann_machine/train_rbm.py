@@ -57,3 +57,18 @@ for epoch in range(1, num_epoch + 1):
         train_loss += torch.mean(torch.abs(visible_0[visible_0 >= 0] - visible_k[visible_0 >= 0]))  # Average distance
         counter += 1.
     print("epoch: " + str(epoch) + ' loss: ' + str(train_loss / counter))
+
+# Test the RBM
+test_loss = 0
+counter = 0.
+for id_user in range(num_users):
+    visible = training_set[id_user:id_user + 1]
+    visible_target = test_set[id_user:id_user + 1]
+    if len(visible_target[visible_target >= 0]) > 0:
+        _, hidden = rbm.sample_hidden_nodes(visible)
+        _, visible = rbm.sample_visible_nodes(hidden)
+
+        test_loss += torch.mean(torch.abs(
+            visible_target[visible_target >= 0] - visible[visible_target >= 0]))
+        counter += 1.
+print('test loss: ' + str(test_loss / counter))
