@@ -1,52 +1,25 @@
-import numpy as np
-import pandas as pd
 import torch
-import torch.nn as nn
-import torch.nn.parallel
-import torch.optim as optim
-import torch.utils.data
-from torch.autograd import Variable
-
-movies = pd.read_csv('movie_lens1m/movies.dat',
-                     sep='::',
-                     header=None,
-                     engine='python',
-                     encoding='latin-1')
-
-users = pd.read_csv('movie_lens1m/users.dat',
-                     sep='::',
-                     header=None,
-                     engine='python',
-                     encoding='latin-1')
-
-ratings = pd.read_csv('movie_lens1m/ratings.dat',
-                     sep='::',
-                     header=None,
-                     engine='python',
-                     encoding='latin-1')
-
-training_set = pd.read_csv('movie_lens100k/u1.base', delimiter='\t')
-training_set = np.array(training_set, dtype='int')
-test_set = pd.read_csv('movie_lens100k/u1.test', delimiter='\t')
-test_set = np.array(test_set, dtype='int')
-
-nb_users = int(max(max(training_set[:, 0]), max(test_set[:, 0])))
-nb_movies = int(max(max(training_set[:, 1]), max(test_set[:, 1])))
 
 
-def converts(data):
-    new_data = []
-    for id_users in range(1, nb_users + 1):
-        id_movies = data[:, 1][data[:, 0] == id_users]
-        id_ratings = data[:, 2][data[:, 0] == id_users]
-        ratings = np.zeros(nb_movies)
-        ratings[id_movies - 1] = id_ratings
-        new_data.append(list(ratings))
-    return new_data
+class RestrictedBoltzmanMachines():
+    def __init__(self, num_visible_nodes, num_hidden_nodes):
+        self.W = torch.randn(num_hidden_nodes, num_visible_nodes)
+        self.a = torch.randn(1, num_hidden_nodes)  # bias for hidden nodes
+        self.b = torch.randn(1, num_visible_nodes)  # bias for visiable nodes
 
+    def sample_hidden_nodes(self, x):
+        wx = torch.mm(x, self.W.t())
+        activation = wx + self.a.expand_as(wx)
+        prob_hidden_given_visible = torch.sigmoid(activation)
+        return prob_hidden_given_visible, torch.bernoulli(prob_hidden_given_visible)
 
-training_set = converts(training_set)
-test_set = converts(test_set)
+    def sample_visible_nodes(self, y):
+        wy = torch.mm(y, self.W)
+        activation = wy + self.b.expand_as(wy)
+        prob_visible_given_hidden = torch.sigmoid(activation)
+        return prob_visible_given_hidden, torch.bernoulli(prob_visible_given_hidden)
 
-training_set = torch.FloatTensor(training_set)
-test_set = torch.FloatTensor(test_set)
+    def train(self, visible_0_iter, visible_k_iter, prob_hidden_0, prob_hidden_k):
+        self.W += torch.mm(visible_0_iter.t(), prob_hidden_0) - torch.mm(visible_k_iter.t(), prob_hidden_k)
+        self.b += torch.sum((visible_0_iter - visible_k_iter), 0)
+        self.a += torch.sum((prob_hidden_0 - prob_hidden_k), 0)
