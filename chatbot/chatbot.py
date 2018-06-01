@@ -20,15 +20,14 @@ learning_rate_decay = 0.9
 min_learning_rate = 0.0001
 keep_probability = 0.5
 
-ans_words_to_int, ques_words_to_int, sort_clean_ques, sort_clean_ans = preprocess_data(lines, conversations)
 
 tf.reset_default_graph()
 session = tf.InteractiveSession()       # Defining a session
 
+
+ans_words_to_int, ques_words_to_int, sort_clean_ques, sort_clean_ans = preprocess_data(lines, conversations)
 inputs, targets, learn_rate, keep_prob = model_inputs()
-
 sequence_length = tf.placeholder_with_default(25, None, name='sequence_length')
-
 input_shape = tf.shape(inputs)
 
 training_predictions, test_predictions = seq2seq_model(tf.reverse(inputs, [-1]),
@@ -55,4 +54,10 @@ with tf.name_scope('optimization'):
                          if grad_tensor is not None]
     optimizer_gradient_clipping = optimizer.apply_gradients(clipped_gradients)
 
-training_validation_split = int(len(sort_clean_ques))
+training_validation_split = int(len(sort_clean_ques) * 0.15)
+
+training_questions = sort_clean_ques[training_validation_split:]
+training_answers = sort_clean_ans[training_validation_split:]
+
+validation_questions = sort_clean_ques[:training_validation_split]
+validation_answers = sort_clean_ans[:training_validation_split]
