@@ -1,4 +1,6 @@
+import numpy as np
 import time
+from preprocess import clean_text
 from preprocess import read_txt, model_inputs
 from seq2seq import seq2seq_model, split_into_batches
 from preprocess_answers_and_questions import preprocess_data
@@ -24,7 +26,8 @@ tf.reset_default_graph()
 session = tf.InteractiveSession()       # Defining a session
 
 
-ans_words_to_int, ques_words_to_int, sort_clean_ques, sort_clean_ans = preprocess_data(lines, conversations)
+ans_words_to_int, ans_ints_to_word, ques_words_to_int, sort_clean_ques, sort_clean_ans \
+ = preprocess_data(lines, conversations)
 inputs, targets, lr, keep_prob = model_inputs()
 sequence_length = tf.placeholder_with_default(25, None, name='sequence_length')
 input_shape = tf.shape(inputs)
@@ -134,3 +137,40 @@ for epoch in range(1, epochs + 1):
         break
 
 print("Game Over")
+
+checkpoint = "./chatbot_weights.ckpt"
+session = tf.InteractiveSession()
+session.run(tf.global_variables_initializer())
+saver = tf.train.Saver()
+saver.restore(session, checkpoint)
+
+
+def convert_string_to_int(question, word2int):
+    question = clean_text(question)
+    return [word2int.get(word, word2int['<OUT>']) for word in question.split()]
+
+
+while(True):
+    question = input("You: ")
+    if question == 'Goodbye':
+        break
+    question = convert_string_to_int(question, ques_words_to_int)
+    question = question + [ques_words_to_int['<PAD>']] * (25 - len(question))
+    fake_batch = np.zeros((batch_size, 25))
+    fake_batch[0] = question
+    predicted_answer = session.run(test_predictions, {inputs: fake_batch,
+                                                      keep_prob: 0.5})[0]
+    answer = ''
+    for i in np.argmax(predicted_answer, 1):
+        if ques_words_to_int[i] == 'i':
+            token = ' I'
+        elif ques_words_to_int[i] == '<EOS>':
+            token = '.'
+        elif ques_words_to_int[i] == '<OUT>':
+            token = 'out'
+        else:
+            token = ' ' + ques_words_to_int[i]
+        answer += token
+        if token == '.':
+            break
+    print('ChatBot: ' + answer)

@@ -28,6 +28,24 @@ def preprocess_data(lines, conversations):
     for answer in answers:
         clean_answers.append(clean_text(answer))
 
+    short_questions = []
+    short_answers = []
+    i = 0
+    for question in clean_questions:
+        if 2 <= len(question.split()) <= 25:
+            short_questions.append(question)
+            short_answers.append(clean_answers[i])
+        i += 1
+
+    clean_questions = []
+    clean_answers = []
+    i = 0
+    for answer in short_answers:
+        if 2 <= len(answer.split()) <= 25:
+            clean_answers.append(answer)
+            clean_questions.append(short_questions[i])
+        i += 1
+
     word2count = {}
     for question in clean_questions:
         for word in question.split():
@@ -43,7 +61,7 @@ def preprocess_data(lines, conversations):
             else:
                 word2count[word] += 1
 
-    threshold = 20
+    threshold = 15
     questions_words_to_int = {}
     word_number = 0
     for word, count in word2count.items():
@@ -92,10 +110,14 @@ def preprocess_data(lines, conversations):
 
     sorted_clean_questions = []
     sorted_clean_answers = []
-    for length in range(1, 25):
+    for length in range(1, 25 + 1):
         for i in enumerate(questions_into_int):
             if len(i[1]) == length:
                 sorted_clean_questions.append(questions_into_int[i[0]])
                 sorted_clean_answers.append(answers_into_int[i[0]])
 
-    return answers_words_to_int, questions_words_to_int, sorted_clean_questions, sorted_clean_answers
+    return (answers_words_to_int,
+            answers_ints_to_word,
+            questions_words_to_int,
+            sorted_clean_questions,
+            sorted_clean_answers)
